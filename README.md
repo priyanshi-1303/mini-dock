@@ -42,8 +42,9 @@ Clone the repository
 bash
 Copy
 Edit
-git clone https://github.com/priyanshi-1303/Mini-docker
-cd mini-docker
+git clone https://github.com/priyanshi-1303/mini-dock
+cd mini-dock
+python -m dashboard.app
 Install dependencies
 
 bash
