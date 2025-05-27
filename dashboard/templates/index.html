@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Mini Docker Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #121212;
+            color: #f1f1f1;
+        }
+        table, th, td {
+            border: 1px solid #444;
+            border-collapse: collapse;
+            padding: 8px;
+        }
+        th {
+            background-color: #333;
+        }
+        a, button {
+            color: #61dafb;
+        }
+        .memory-frame {
+            display: inline-block;
+            width: 60px;
+            height: 20px;
+            margin: 2px;
+            text-align: center;
+            line-height: 20px;
+            border: 1px solid #555;
+            background-color: #222;
+            color: #fff;
+        }
+        .free {
+            background-color: #444;
+        }
+        .used {
+            background-color: #009688;
+        }
+        .log-entry {
+            color: #ffa726;
+            margin-bottom: 5px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mini Docker Dashboard</h1>
+
+    <h2>Create Container</h2>
+    <form method="post" action="{{ url_for('create_container') }}">
+        Container ID: <input type="text" name="container_id" required />
+        Memory (KB): <input type="number" name="memory_kb" value="64" min="4" step="4" required />
+        <button type="submit">Create</button>
+    </form>
+
+    <h2>Containers</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Memory (KB)</th>
+            <th>Pages</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+        {% for cid, container in containers.items() %}
+        <tr>
+            <td>{{ cid }}</td>
+            <td>{{ container.mem_kb }}</td>
+            <td>{{ container.pages|length }}</td>
+            <td>{{ "Running" if container.running else "Stopped" }}</td>
+            <td>
+                {% if not container.running %}
+                    <a href="{{ url_for('start_container', cid=cid) }}">Start</a>
+                {% else %}
+                    <a href="{{ url_for('stop_container', cid=cid) }}">Stop</a>
+                {% endif %}
+                &nbsp;|&nbsp;
+                <a href="{{ url_for('terminate_container', container_id=cid) }}" onclick="return confirm('Are you sure you want to terminate this container?');">Terminate</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Memory Frames</h2>
+    <div>
+        {% for frame in mem_state %}
+            {% if frame is none %}
+                <div class="memory-frame free">{{ loop.index0 }}</div>
+            {% else %}
+                <div class="memory-frame used">C{{ frame[0] }}P{{ frame[1] }}</div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <h2>Access Memory</h2>
+    <form method="post" action="{{ url_for('allocate_memory') }}">
+        Container ID: <input type="text" name="container_id" required />
+        Page Number: <input type="number" name="page_number" min="0" required />
+        Algorithm:
+        <select name="algorithm">
+            <option value="FIFO">FIFO</option>
+            <option value="LRU">LRU</option>
+        </select>
+        <button type="submit">Access</button>
+    </form>
+
+    <h2>Page Fault Log</h2>
+    <div id="page-fault-log">
+        {% for fault in page_fault_log %}
+            <div class="log-entry">
+                [{{ fault.time }}] Page Fault - C{{ fault.cid }}P{{ fault.page }} ({{ fault.algorithm }})
+            </div>
+        {% endfor %}
+    </div>
+
+</body>
+</html>
